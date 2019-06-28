@@ -1,0 +1,68 @@
+kafkahq:
+  server:
+    base-path: "" # if behind a reverse proxy, path to kafkahq with trailing slash (optionnal). Example: kafkahq is
+                  # behind a reverse proxy with url http://my-server/kafkahq, set base-path: "/kafkahq/".
+                  # Not needed if you're behind a reverse proxy with subdomain http://kafkahq.my-server/
+    access-log: # Access log configuration (optionnal)
+      enabled: true # true by default
+      name: org.kafkahq.log.access # Logger name
+      format: "[Date: {}] [Duration: {} ms] [Url: {} {} {}] [Status: {}] [Ip: {}] [Length: {}] [Port: {}]" # Logger format
+
+  # default kafka properties for each clients, available for admin / producer / consumer (optionnal)
+  clients-defaults:
+    consumer:
+      properties:
+        isolation.level: read_committed
+
+  # list of kafka cluster available for kafkahq
+  connections:
+#    my-cluster-1: # url friendly name for the cluster
+#      properties: # standard kafka properties (optionnal)
+#        bootstrap.servers: "10.67.38.121:9092,10.67.38.122:9092,10.67.38.123:9092"
+#      schema-registry: "http://schema-registry:8085" # schema registry url (optionnal)
+
+    my-cluster-1:
+      properties:
+        bootstrap.servers: "10.67.38.134:9092,10.67.38.135:9092,10.67.38.136:9092"
+      schema-registry: "http://10.67.38.134:8081"
+
+    my-cluster-2:
+      properties:
+        bootstrap.servers: "10.67.51.144:9092,10.67.51.145:9092,10.67.51.146:9092"
+      schema-registry: "http://10.67.51.144:8081"
+
+  # Topic display data options (optionnal)
+  topic-data:
+    sort: OLDEST # default sort order (OLDEST, NEWEST) (default: OLDEST)
+    size: 50 # max record per page (default: 50)
+
+  # Auth & Roles (optionnal)
+  security:
+    default-roles: # Roles available for all the user even unlogged user
+      - topic/read
+      - topic/insert
+      - topic/delete
+      - topic/config/update
+      - node/read
+      - node/config/update
+      - topic/data/read
+      - topic/data/insert
+      - topic/data/delete
+      - group/read
+      - group/delete
+      - group/offsets/update
+      - registry/read
+      - registry/insert
+      - registry/update
+      - registry/delete
+      - registry/version/delete
+
+    # Basic auth configuration
+#    basic-auth:
+#      user: # Username
+#        password: pass # Password in sha256
+#        roles: # Role for current users
+#          - topic/read
+#          - group/read
+#          - group/delete
+
