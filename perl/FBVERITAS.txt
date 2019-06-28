@@ -1,0 +1,46 @@
+= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
+Server Name : FBVERITAS 
+= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
+---------------------------------------------------------------------- 
+CPU,Memory and OS info 
+---------------------------------------------------------------------- 
+Physical Memory: 2047 MB 
+CPU Info: 4 CPU 
+OS Version: Microsoft(R) Windows(R) Server 2003, Enterprise Edition Service Pack 2 
+---------------------------------------------------------------------- 
+Disk info 
+---------------------------------------------------------------------- 
+Description       Name  Size          VolumeName  
+Local Fixed Disk  C:    52386775040               
+CD-ROM Disc       D:                              
+Local Fixed Disk  E:    111567691776  New Volume  
+---------------------------------------------------------------------- 
+Network info 
+---------------------------------------------------------------------- 
+
+Configuration for interface "TEAM 1"
+    DHCP enabled:                         No
+    IP Address:                           192.168.19.118
+    SubnetMask:                           255.255.255.0
+    Default Gateway:                      192.168.19.254
+    GatewayMetric:                        0
+    InterfaceMetric:   			  0
+                   
+Configuration for interface "Local Area Connection"
+    DHCP enabled:                         Yes
+    IP Address:                           192.168.127.34
+    Subnet Prefix:                        192.168.127.0/24 
+    Default Gateway:                      192.168.127.1
+    Gateway Metric:                       0
+    InterfaceMetric:                      20
+
+---------------------------------------------------------------------- 
+User info 
+---------------------------------------------------------------------- 
+Caption                     Disabled  LocalAccount  
+FBVERITAS\Administrator     TRUE      TRUE          
+FBVERITAS\ASPNET            FALSE     TRUE       FBVERITAS\Guest             TRUE      TRUE          
+FBVERITAS\IUSR_FBVERITAS    FALSE     TRUE          
+FBVERITAS\IWAM_FBVERITAS    FALSE     TRUE    FBVERITAS\psabackup         FALSE     TRUE          
+FBVERITAS\SUPPORT_388945a0  TRUE      TRUE          
+= = = = = = = = = = = = = = = = = = = = = = = = End of output for FBVERITAS 

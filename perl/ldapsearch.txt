@@ -1,0 +1,3 @@
+ldapsearch -x -D "cn=Manager,dc=chris,dc=com" -b "ou=Hosts,dc=chris,dc=com" -s one -w 222222
+还可以-s base   -s children  -s subtree（默认）
+

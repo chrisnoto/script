@@ -1,0 +1,252 @@
+
+
+
+Example9: How to adding all the numbers in 4th column and print the total value at the end.
+
+awk 'BEGIN{s=0}{s=s+$3}END{print s}' db.txt
+END模块是等主语句执行完以后再执行： 变量s的结果为第三列数值的和。
+
+
+awk 'BEGIN{s=0}{s=s+$3;print s}' db.txt
+打印出的是每行数值的叠加
+
+
+########################################################################
+netstat -n |awk '/^tcp/ {++S[$NF]} END {for(a in S) print a, S[a]}'
+
+命令拆分   功能说明
+/^tcp/     过滤出以tcp开头的行，“^”为正则表达式用法，以...开头，这里是过滤出以tcp开头的行。
+S[]        定义了一个名叫S的数组，在awk中，数组下标通常从 1 开始，而不是 0。
+NF         当前记录里域个数，默认以空格分隔，如上所示的记录，NF域个数等于6
+$NF        表示一行的最后一个域的值，如上所示的记录，$NF也就是$6，表示第6个字段的值，也就是SYN_RECV或TIME_WAIT等。
+S[$NF]     表示数组元素的值，如上所示的记录，就是S[TIME_WAIT]状态的连接数
+++S[$NF]   表示把某个数加一，如上所示的记录，就是把S[TIME_WAIT]状态的连接数加一
+END
+
+for(key in S)                遍历S[]数组
+print key,”\t”,S[key]        打印数组的键和值，中间用\t制表符分割，显示好一些。
+##########################################################################
+
+笔试某互联网公司运维时遇到的一道题：
+有个文件如下：
+http://a.domain.com/1.html
+http://b.domain.com/1.html
+http://c.domain.com/1.html
+http://a.domain.com/2.html
+http://b.domain.com/2.html
+http://a.domain.com/3.html
+
+要求：得到主机名（和域名），并统计哪个网址出现的次数，并排序。可以shell或C。
+得到的结果应该是:
+3 a.domain.com
+2 b.domain.com
+1 c.domain.com
+我的答案： sed 's/.*\/\/\([a-z]*\.[a-z]*\.[a-z]*\)\/.*/\1/' 5.txt | sort -n | uniq -c
+cat 5.txt |awk -F'/' '{print $3}'|sort|uniq -c
+cat 5.txt | awk -F '/' '{++S[$3]}END{for(a in S)print S[a],a}' | sort -rn
+cat 5.txt |cut -d/ -f3| sort | uniq -c
+
+############################################################################
+有一个文件是QQ号到手机号的绑定关系，一行一个关系，格式如下：
+cat file
+11235334: 13443253456
+11235335: 13443253457
+11235336: 13443253458
+11235333: 13443253458
+11235336: 13443253459
+11235334: 13443253452
+要求统计出每个QQ绑定了几个手机，输出到一个文件里。格式如下：
+[11235333]
+1
+
+13443253458
+[11235334]
+2
+
+13443253456
+
+13443253452
+[11235335]
+1
+
+13443253457
+[11235336]
+2
+
+13443253458
+
+13443253459
+
+awk -F ':' '{a[$1]+=1;b[$1]=b[$1]"\n"$2}END{for(i in a) print "[" i"]","\t"a[i],b[i]"\n"}' 6.txt
+
+##############################################################################
+
+
+
+awk精确匹配单词  加上 \<和 \>
+
+打印ip地址
+ifconfig | sed -e '/.*inet addr:/!d;s///;s/ .*//'
+ifconfig | awk '/\<inet\>/ {print substr($2,6)}'
+
+ifconfig bond0 | awk  '/\<inet\>/ {print substr($2,6),substr($3,7),substr($4,6)}'
+ifconfig bond0 |awk -F: '/\<inet\>/{gsub(/[a-z]/,"");print $2,$3,$4}'
+ifconfig bond0 |awk  ' BEGIN{FS=":"} /\<inet\>/{gsub(/[a-z]/,"");print $2,$3,$4}'
+
+# ifconfig bond0 |awk -F: '/\<inet\>/{gsub(/[a-z]/,"");print "IP:\t"$2,"\nBcast:\t",$3,"\nMASK:\t",$4}'
+IP:	192.168.127.39   
+Bcast:	 192.168.127.255   
+MASK:	 255.255.255.0
+################################################################################
+*********提取数字**********
+3.txt |
+------
+dsfj2lj132.23.44.22fjljf
+234.23.44.223dkjfjf
+kdjfdf183.24.33.91
+
+
+sed 's/.*\([0-9]\{3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\).*$/\1/' 3.txt
+***************************
+结果： 132.23.44.22
+       234.23.44.223
+       183.24.33.91
+
+################################################################################
+find . -mtime `echo -$(($(($(date +%s)-$(date -d "2012-12-01" +%s)))/3600/24))` -and -mtime `echo +$(($(($(date +%s)-$(date -d "2012-12-15" +%s)))/3600/24))` -exec cp -r {} /tmp \;
+
+
+expr $(date -d "2010-12-20" +"%Y%m%d") - $(date -d "2010-12-11" +"%Y%m%d")  结果为 9天
+echo $(($(date -d "2010-12-20" +"%Y%m%d") - $(date -d "2010-12-11" +"%Y%m%d")))
+
+a=1; echo $((a=a+1))    结果为 2
+ a=1; ((a=a+1)); echo $a              - using (( )) to calculate variables
+
+a=1； expr $a + 1;  显示结果2，但是变量a的值还是1
+a=1; a=`expr $a + 1`; echo $a   显示结果为2，  变量a的值为2
+
+a=1;b=10; expr $b - $a   结果为9
+expr 10 + 6    结果为16
+
+
+#############################################################################
+两个文件，file1，file2，各包含100万个唯一的qq号码，但两个文件中的号码有部分重复
+要求：
+1、找出file1中有而file2中没有的qq号码
+2、找出file2中有而file1中没有的qq号码
+3、找出两个文件中都有的号码
+ 
+1、找出file1中有而file2中没有的qq号码
+sort file1> file1_tmp
+sort file2>file2_tmp
+comm -23 file1_tmp file2_tmp
+或者：
+sort file1 file2|uniq -d > file3
+sort file1 file3|uniq -u
+或者：grep -f file1 -v file2
+2、找出file2中有而file1中没有的qq号码
+sort file1> file1_tmp
+sort file2>file2_tmp
+comm -13 file1_tmp file2_tmp
+或者：
+sort file1 file2|uniq -d > file3
+sort file2 file3|uniq -u
+或者:grep -f file2 -v file1
+3、找出两个文件中都有的号码
+sort file1 file2|uniq -d
+或者sort file1> file1_tmp
+sort file2>file2_tmp
+comm -12 file1_tmp file2_tmp 
+或者grep -f file1 file2
+##################################################################
+[root@Netapp-centos6 ~]# comm -3 30.txt 40.txt 
+	001 root
+	002 mail
+	003 nr
+	004 fnr
+aa 001
+ab 002
+ac 003
+ad 004
+
+[root@Netapp-centos6 ~]# awk 'NR==FNR{a[$2]=$0;next}{print a[$1]"\t" $2}' 30.txt 40.txt 
+aa 001	root
+ab 002	mail
+ac 003	nr
+ad 004	fnr
+注释:
+当NR=FNR为真时,判断当前读入的是第一个文件30.txt,然后使用{ a[$2]=$0; next }循环将30.txt文件的每行记录都存入数组a,并使用$2第2个字段作为下标引用.
+当NR=FNR为假时,判断当前读入了第二个文件40.txt,然后跳过{a[$2]=$0;next},对第二个文件40.txt的每一行都无条件执行{ print a[$1]"|"$2 },此时变量$1为第二个文件的第一个字段,与读入第一个文件时,采用第一个文件第二个字段$2为数组下标相同.因此可以在此使用a[$1]引用数组。
+
+awk 'BEGIN{OFS=FS=":"} NR==FNR{a[$1]=$2}NR>FNR{$2=a[$1];print}' /etc/shadow /etc/passwd
+
+
+free | awk 'NR>1{print $0}'
+
+df -h | awk 'NR>3{gsub(/%/,"");if($5>10)print $5,$6}'
+df -h|awk '$5~/[8 9][0-9]%|100%/ '
+
+
+
+# awk -F ":" '$1 ~/root/' /etc/passwd
+root:x:0:0:root:/root:/bin/bash
+
+# awk -F ":" '/root/' /etc/passwd
+root:x:0:0:root:/root:/bin/bash
+operator:x:11:0:operator:/root:/sbin/nologin
+
+# awk 'BEGIN{x=0}/^$/{x=x+1}END{print "I found " x " blank lines."}' 111.pl 
+I found 7 blank lines.
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Print paragraphs containing 'Memory Device\n' 在输出有分段的情况下，打印包含pattern的段落
+sed    -e '/./{H;$!d;}' \
+          -e 'x;/Memory Device\n/!d;' \
+          -e 's/: /:/g' \
+          -e 's/</{/g' \
+          -e 's/>/}/g' \
+          -e 's/[ \t]*\n/\n/g' \
+       /tmp/aspersa \
+       | awk -F: '/Size|Type|Form.Factor|Type.Detail|[^ ]Locator/{printf("|%s", $2)}/Speed/{print "|" $2}' \
+       | sed -e 's/No Module Installed/{EMPTY}/' \
+       | sort \
+       | awk -F'|' '{printf("  %-9s %-8s %-17s %-13s %-13s %-8s\n", $4, $2, $7, $3, $5, $6);}'
+}
+
+top -bn 1 | sed -e 's# *$##g' -e '/./{H;$!d;}' -e 'x;/PID/!d;' | grep . | head
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+N命令
+先来看N命令 —— 把下一行的内容纳入当成缓冲区做匹配。
+
+下面的的示例会把原文本中的偶数行纳入奇数行匹配，而s只匹配并替换一次，所以，就成了下面的结果：
+
+
+$ sed 'N;s/my/your/' pets.txt
+This is your cat
+  my cat's name is betty
+This is your dog
+  my dog's name is frank
+This is your fish
+  my fish's name is george
+This is your goat
+  my goat's name is adam
+也就是说，原来的文件成了：
+
+
+This is my cat\n  my cat's name is betty
+This is my dog\n  my dog's name is frank
+This is my fish\n  my fish's name is george
+This is my goat\n  my goat's name is adam
+这样一来，下面的例子你就明白了，
+
+$ sed 'N;s/\n/,/' pets.txt
+This is my cat,  my cat's name is betty
+This is my dog,  my dog's name is frank
+This is my fish,  my fish's name is george
+This is my goat,  my goat's name is adam
+
+
+补丁包：
+diff -u newpasswd newpasswd2 > newpasswd.patch
+patch -b newpasswd newpasswd.patch

@@ -1,0 +1,193 @@
+
+Fabric: a System Administrator's Best Friend
+Apr 09, 2013  By Adrian Hannah	
+ in
+
+    Fabric
+    python
+    ssh
+    SysAdmin
+
+Do you routinely make changes to more than a dozen machines at a time? Read this article to find out about a tool to make that task much easier.
+
+I'll be honest. Even though this library is fully five years old, I hadn't heard of Fabric until about six months ago. Now I can't imagine not having it in my digital tool belt. Fabric is a Python library/tool that is designed to use SSH to execute system administration and deployment tasks on one or more remote machines. No more running the same task, machine by machine, to make one change across the board. It is a simple fire-and-forget tool that will make your life so much simpler. Not only can you run simple tasks via SSH on multiple machines, but since you're using Python code to execute items, you can combine it with any arbitrary Python code to make robust, complex, elegant applications for deployment or administration tasks.
+Installation
+
+Fabric requires Python 2.5 or later, the setuptools packaging/installation library, the ssh Python library, and SSH and its dependencies. For the most part, you won't have to worry about any of this, because Fabric can be installed easily through various package managers. The easiest, and most prolific way to install Fabric is using pip (or easy_install). On most systems, you can use your systems package manager (apt-get, install, and so on) to install it (the package either will be fabric or python-fabric). If you're feeling froggy, you can check out the git repository and hack away at the source code.
+
+Once installed, you will have access to the fab script from the command line.
+Operations
+
+The Fabric library is composed of nine separate operations that can be used in conjunction to achieve your desired effect. Simply insert these functions into your fabfile and off you go:
+
+    get(remote_path, local_path=None) — get allows you to pull files from the remote machine to your local machine. This is like using rsync or scp to copy a file or files from many machines. This is super effective for systematically collecting log files or backups in a central location. The remote path is the path of the file on the remote machine that you are grabbing, and the local path is the path to which you want to save the file on the local machine. If the local path is omitted, Fabric assumes you are saving the file to the working directory.
+
+    local(command, capture=False) — the local function allows you to take action on the local host in a similar fashion to the Python subprocess module (in fact, local is a simplistic wrapper that sits on top of the subprocess module). Simply supply the command to run and, if needed, whether you want to capture the output. If you specify capture=True, the output will be returned as a string from local, otherwise it will be output to STDOUT.
+
+    open_shell(command=None) — this function is mostly for debugging purposes. It opens an interactive shell on the remote end, allowing you to run any number of commands. This is particularly helpful if you are running a series of particularly complex commands and it doesn't seem to be working on some of your machines.
+
+    prompt(text, key=None, default='', validate=None) — in the case when you need to supply a value, but don't want to specify it on the command line for whatever reason, prompt is the ideal way to do this. I have a fabfile I use to add/remove/check the status of software on all of the servers I maintain, and I use this in the script for when I forget to specify what software I'm working on. This prompt will appear for each host you specify, so make sure you account for that!
+
+    put(local_path, remote_path, use_sudo=False, mirror_local_mode=False, mode=None) — this is the opposite command of get, although you are given more options when putting to a remote system than getting. The local path can be a relative or absolute file path, or it can be an actual file object. If either local_path or remote_path is left blank, the working directory will be used. If use_sudo=True is specified, Fabric will put the file in a temporary location on the remote machine, then use sudo to move it from the temporary location to the specified location. This is particularly handy when moving system files like /etc/resolv.conf or the like that can't be moved by a standard user and you have root login turned off in SSH. If you want the file mode preserved through the copy, use mirror_local_mode=True; otherwise, you can set the mode using mode.
+
+    reboot(wait=120) — reboot does exactly what it says: reboots the remote machine. By default, reboot will wait 120 seconds before attempting to reconnect to the machine to continue executing any following commands.
+
+    require(*keys, **kwargs) — require forces the specified keys to be present in the shared environment dict in order to continue execution. If these keys are not present, Fabric will abort. Optionally, you can specify used_for to indicate what the key is used for in this particular context.
+
+    run(command, shell=True, pty=True, combine_stderr=True, quiet=False, warn_only=False, stdout=None, stderr=None) — This and sudo are the two most used functions in Fabric, because they actually execute commands on the remote host (which is the whole point of Fabric). With run, you execute the specified command as the given user. run returns the output from the command as a string that can be checked for a failed, succeeded and return_code attribute. shell controls whether a shell interpreter is created for the command. If turned off, characters will not be escaped automatically in the command. Passing pty=False causes a psuedo-terminal not to be created while executing this command; this can have some benefit if the command you are running has issues interacting with the psuedo-terminal, but otherwise, it will be created by default. If you want stderr from the command to be parsable separately from stdout, use combine_stderr=False to indicate that. quiet=True will cause the command to run silently, sending no output to the screen while executing. When an error occurs in Fabric, typically the script will abort and indicate as such. You can indicate that Fabric need not abort if a particular command errors using the warn_only argument. Finally, you can redirect where the remote stderr and stdout redirect to on the local side. For instance, if you want the stderr to pipe to stdout on the local end, you could indicate that with stderr=sys.stdout.
+
+    sudo(command, shell=True, pty=True, combine_stderr=True, user=None, quiet=False, warn_only=False, stdout=None, stderr=None, group=None) — sudo works precisely like run, except that it will elevate privileges prior to executing the command. It basically works the same is if you'd run the command using run, but prepended sudo to the front of command. sudo also takes user and group arguments, allowing you to specify which user or group to run the command as. As long as the original user has the permissions to escalate for that particular user/group and command, you are good to go. 
+
+ The Basics
+
+Now that you understand the groundwork of Fabric, you can start putting it to use. For this article, I explain how to make a simple fabfile for the purpose of installing/removing software and your machines. First, you need what is called a fabfile. The fabfile contains all of your Fabric functions. By default, it needs to be named fabfile.py and be in the working directory, but as mentioned previously, you can specify the fabfile from the command line if need be. So, open your fabfile and start it with from fabric.api import * to include all the Fabric functionality. Then define all of your functions. Let's start with installing some software:
+
+
+def install(pkg=None):
+   if pkg is not None:
+      env["pkg"] = pkg
+   elif pkg is None and env.get("pkg") is None:
+      env["pkg"] = prompt("Which package? ")
+   sudo('yum install -y %s' % env["pkg"])
+
+You then can install a package via yum on all of your machines by running:
+
+
+$ fab --hosts=host1,host2,host3 install
+
+Then, you'll be prompted for the package to install only once. Alternatively, since you indicated an optional parameter of pkg, you can indicate that from the command line so you won't be prompted on execution, like this:
+
+
+$ fab --hosts=host1,host2,host3 install:pkg=wormux
+
+or:
+
+
+$ fab --hosts=host1,host2,host3 install:wormux
+
+Also note that you are prompted for the password for both SSH and sudo only once. Fabric stores this in memory and reuses it, if possible, for every other machine. Congratulations! You've just successfully created your first Fabric script. It's as simple as that!
+Tips and Tricks
+
+I've picked up some neat tricks since I've started with Fabric. First, you generally never see a Fabric command as simple as what is above. When fully automated, it looks more like this:
+
+
+$ fab --skip-bad-hosts -u user -p 12345 -i ~/.ssh/id_dsa --warn-only
+ ↪--hosts=host1,host2,host3,host4,host5,host6,host7,host8,host9,host10
+ ↪--parallel --pool-size=20 install:pkg=wormux
+
+Who wants to type that out every time they want to run a command? No one! That's why aliasing almost all of that is so convenient and efficient. Add the following to your .bashrc file:
+
+
+alias f="fab --skip-bad-hosts -u user -p 12345 -i ~/.ssh/id_dsa
+ ↪--warn-only
+ ↪--hosts=host1,host2,host3,host4,host5,host6,host7,host8,host9,host10
+ ↪--parallel"
+
+Then, all you have to do each time you want to run Fabric is this:
+
+
+$ f install:pkg=wormux
+
+Even using this technique, your alias can become cumbersome if you have more than a few machines you commonly administer. A simple solution to that is to add this function to your fabfile:
+
+
+def set_hosts():
+   env.hosts = open('hosts', 'r').readlines()
+
+Then, put all your hostnames in a file called hosts in the same directory as your fabfile, and modify your alias to look like this:
+
+
+alias f="fab --skip-bad-hosts -u user -p 12345 -i ~/.ssh/id_dsa
+ ↪--warn-only --parallel set_hosts"
+
+This is particularly convenient if you have a variety of fabfiles that you use on different groups of machines, or in different contexts.
+
+There are occasions when you need to execute certain commands from within a specific directory. Because each command is a discrete and non-persistent connection to the machine, this is not inherently simple. However, simply by enclosing the necessary commands in a with statement, you have a solution:
+
+
+with cd("~/gitrepo"):
+   run('git add --all')
+   run('git commit -m "My super awesome automated 
+   ↪commit script for `date`"')
+
+More Information
+
+There are several ways to get help with Fabric. The most effective is to use the fab-file mailing list. The developers are generally very prompt in responding. There is also a Fabric Twitter account @pyfabric where Fabric news and announcements are released. You can submit and view bugs through the Fabric Github page. Of course, you also can't discount the #fabric channel on Freenode, where you can connect with the community and get some quick answers. Finally, you always can browse the documentation hosted at http://www.fabfile.org. 
+
+
+A Brief Word on Application Deployment
+
+Fabric also is used in development teams to deploy new code to production. It is actually used in a fairly similar fashion to how system administrators use it (copy files, run a few commands and so on), just in a very specific manner. Because of how automated Fabric is, it's easy to incorporate it into a continuous integration cycle and even fully automate your deployment process.
+Command-Line Arguments
+
+    -a, --no_agent — sets env.no_agent to True, forcing your SSH layer not to talk to the SSH agent when trying to unlock private key files.
+
+    -A, --forward-agent — sets env.forward_agent to True, enabling agent forwarding.
+
+    --abort-on-prompts — sets env.abort_on_prompts to True, forcing Fabric to abort whenever it would prompt for input.
+
+    -c RCFILE, --config=RCFILE — sets env.rcfile to the given file path, which Fabric will try to load on startup and use to update environment variables.
+
+    -d COMMAND, --display=COMMAND — prints the entire docstring for the given task, if there is one. It does not currently print out the task's function signature, so descriptive docstrings are a good idea. (They're always a good idea, of course, just more so here.)
+
+    --connection-attempts=M, -n M — sets the number of times to attempt connections. Sets env.connection_attempts.
+
+    -D, --disable-known-hosts — sets env.disable_known_hosts to True, preventing Fabric from loading the user's SSH known_hosts file.
+
+    -f FABFILE, --fabfile=FABFILE — the fabfile name pattern to search for (defaults to fabfile.py), or alternately an explicit file path to load as the fabfile (for example, /path/to/my/fabfile.py).
+
+    -F LIST_FORMAT, --list-format=LIST_FORMAT — allows control over the output format of --list. short is equivalent to --shortlist; normal is the same as simply omitting this option entirely (the default), and nested prints out a nested namespace tree.
+
+    -g HOST, --gateway=HOST — sets env.gateway to HOST host string.
+
+    -h, --help — displays a standard help message with all possible options and a brief overview of what they do, then exits.
+
+    --hide=LEVELS — a comma-separated list of output levels to hide by default.
+
+    -H HOSTS, --hosts=HOSTS — sets env.hosts to the given comma-delimited list of host strings.
+
+    -x HOSTS, --exclude-hosts=HOSTS — sets env.exclude_hosts to the given comma-delimited list of host strings to keep out of the final host list.
+
+    -i KEY_FILENAME — when set to a file path, will load the given file as an SSH identity file (usually a private key). This option may be repeated multiple times. Sets (or appends to) env.key_filename.
+
+    -I, --initial-password-prompt — forces a password prompt at the start of the session (after fabfile load and option parsing, but before executing any tasks) in order to pre-fill env.password. This is useful for fire-and-forget runs (especially parallel sessions, in which runtime input is not possible) when setting the password via --password or by setting env.password in your fabfile is undesirable.
+
+    -k — sets env.no_keys to True, forcing the SSH layer not to look for SSH private key files in one's home directory.
+
+    --keepalive=KEEPALIVE — sets env.keepalive to the given (integer) value, specifying an SSH keepalive interval.
+
+    --linewise — forces output to be buffered line by line instead of byte by byte. Often useful or required for parallel execution.
+
+    -l, --list — imports a fabfile as normal, but then prints a list of all discovered tasks and exits. Will also print the first line of each task's docstring, if it has one, next to it (truncating if necessary).
+
+    -p PASSWORD, --password=PASSWORD — sets env.password to the given string; it then will be used as the default password when making SSH connections or calling the sudo program.
+
+    -P, --parallel — sets env.parallel to True, causing tasks to run in parallel.
+
+    --no-pty — sets env.always_use_pty to False, causing all run/sudo calls to behave as if one had specified pty=False.
+
+    -r, --reject-unknown-hosts — sets env.reject_unknown_hosts to True, causing Fabric to abort when connecting to hosts not found in the user's SSH known_hosts file.
+
+    -R ROLES, --roles=ROLES — sets env.roles to the given comma-separated list of role names.
+
+    --set KEY=VALUE,... — allows you to set default values for arbitrary Fabric env vars. Values set this way have a low precedence. They will not override more specific env vars that also are specified on the command line.
+
+    -s SHELL, --shell=SHELL — sets env.shell to the given string, overriding the default shell wrapper used to execute remote commands.
+
+    --shortlist — similar to --list, but without any embellishment—just task names separated by newlines with no indentation or docstrings.
+
+    --show=LEVELS — a comma-separated list of output levels to be added to those that are shown by default.
+
+    --ssh-config-path — sets env.ssh_config_path.
+
+    --skip-bad-hosts — sets env.skip_bad_hosts, causing Fabric to skip unavailable hosts.
+
+    --timeout=N, -t N — set connection timeout in seconds. Sets env.timeout.
+
+    -u USER, --user=USER — sets env.user to the given string; it then will be used as the default user name when making SSH connections.
+
+    -V, --version — displays Fabric's version number, then exits.
+
+    -w, --warn-only — sets env.warn_only to True, causing Fabric to continue execution even when commands encounter error conditions.
+
+    -z, --pool-size — sets env.pool_size, which specifies how many processes to run concurrently during parallel execution. 

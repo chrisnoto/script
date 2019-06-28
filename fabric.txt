@@ -1,0 +1,229 @@
+############fix fabric install issue#################
+yum install gmp-devel
+sudo pip uninstall ecdsa pycrypto paramiko fabric 
+# clear out the pip build dirs
+rm -rf /tmp/pip-*
+# make sure the directory containing libgmp.so.3 is on the python path
+export LD_LIBRARY_PATH="/usr/lib64:$LD_LIBRARY_PATH"  
+pip install fabric 
+
+yum install python-crypto2.6
+#####################fabric comand###############################
+fab -f test_apar.py -R all -- "uname -n"
+fab -R myrole -x host2,host5 mytask
+
+fab mytask:hosts="host1;host2"
+fab -f 3.py lsdir:hosts="master" disk:hosts="agent1"
+fab mytask:roles=myrole,exclude_hosts="host2;host5"
+
+
+fabric.tasks.execute(task, *args, **kwargs)
+execute(mytask, 'arg1', kwarg1='value') 
+def deploy():
+	execute(upload,'RedHat4AS',role='redhat4as')
+	execute(upload,'RedHat4ES',role='redhat4es')
+	execute(upload,'RedHat5Server',role='redhat5')
+	execute(upload,'RedHat6Server',role='redhat6')
+############################version 1.0################################
+[sam@oc1181188062 mysrvlist]$ cat fabfile.py
+#!/usr/bin/env python
+#coding=utf-8
+from fabric.api import *
+import string
+import sys
+import socket
+import paramiko
+
+r6 = []
+r5 = []
+r4as = []
+r4es = []
+
+for line in open('/home/sam/mysrvlist/os_aparserver','r').readlines():
+	(srv,os)=line.split("\t")
+	if os.strip('\n') == 'RedHat6Server':
+		r6.append(srv)
+	elif os.strip('\n') == 'RedHat5Server':
+		r5.append(srv)
+	elif os.strip('\n') == 'RedHat4ES':
+		r4es.append(srv)
+	elif os.strip('\n') == 'RedHat4AS':
+		r4as.append(srv)
+env.roledefs = {
+	'redhat4as': r4as,
+	'redhat4es': r4es,
+	'redhat5': r5,
+	'redhat6': r6,
+	'all': r4as+r4es+r5+r6,
+}
+
+def updatedb():
+        with lcd('/home/sam/mysrvlist'):
+                local('rm -f apar/*')
+                local('rm -f secfixdb.*')
+                local('wget -c --retr-symlinks http://lssec.hursley.ibm.com/secfixdb/secfixdb.RedHat4ES')
+                local('wget -c --retr-symlinks http://lssec.hursley.ibm.com/secfixdb/secfixdb.RedHat4AS')
+                local('wget -c --retr-symlinks http://lssec.hursley.ibm.com/secfixdb/secfixdb.RedHat5Server')
+                local('wget -c --retr-symlinks http://lssec.hursley.ibm.com/secfixdb/secfixdb.RedHat6Server')
+                local('chmod 755 secfixdb.*')
+def lssecfix(osver):
+	with settings(
+                hide('warnings','running','stdout','stderr'),
+                warn_only=True
+        ):
+		put('/home/sam/mysrvlist/secfixdb.'+osver,'/home/chensen')
+		with cd('/home/chensen'):
+			run('lssecfixes -d /home/chensen -p|grep -v "N/A" >`uname -n`.apar')
+			get('/home/chensen/*.apar','/home/sam/mysrvlist/apar')
+def deploy():
+	execute(updatedb)
+	execute(lssecfix,'RedHat4AS',role='redhat4as')
+	execute(lssecfix,'RedHat4ES',role='redhat4es')
+	execute(lssecfix,'RedHat5Server',role='redhat5')
+	execute(lssecfix,'RedHat6Server',role='redhat6')
+#############################version 0.2 #####################################
+[sam@oc1181188062 mysrvlist]$ cat 1.py 
+#!/usr/bin/env python
+#coding=utf-8
+from fabric.api import *
+import string
+import sys
+import socket
+import paramiko
+
+r6 = []
+r5 = []
+r4as = []
+r4es = []
+
+for line in open('/home/sam/mysrvlist/os_aparserver','r').readlines():
+	(srv,os)=line.split("\t")
+	if os.strip('\n') == 'RedHat6Server':
+		r6.append(srv)
+	elif os.strip('\n') == 'RedHat5Server':
+		r5.append(srv)
+	elif os.strip('\n') == 'RedHat4ES':
+		r4es.append(srv)
+	elif os.strip('\n') == 'RedHat4AS':
+		r4as.append(srv)
+env.roledefs = {
+	'redhat4as': r4as,
+	'redhat4es': r4es,
+	'redhat5': r5,
+	'redhat6': r6,
+	'all': r4as+r4es+r5+r6,
+}
+
+def updatedb():
+        with lcd('/home/sam/mysrvlist'):
+                local('rm -f apar/*')
+                local('rm -f secfixdb.*')
+                local('wget -c --retr-symlinks http://lssec.hursley.ibm.com/secfixdb/secfixdb.RedHat4ES')
+                local('wget -c --retr-symlinks http://lssec.hursley.ibm.com/secfixdb/secfixdb.RedHat4AS')
+                local('wget -c --retr-symlinks http://lssec.hursley.ibm.com/secfixdb/secfixdb.RedHat5Server')
+                local('wget -c --retr-symlinks http://lssec.hursley.ibm.com/secfixdb/secfixdb.RedHat6Server')
+                local('chmod 755 secfixdb.*')
+
+def upload(myfile):
+	with settings(
+		hide('warnings','running','stdout','stderr'),
+		warn_only=True
+	):
+		put('/home/sam/mysrvlist/secfixdb.'+myfile,'/home/chensen')
+	
+def download():
+	with settings(
+                hide('warnings','running','stdout','stderr'),
+                warn_only=True
+        ):
+		get('/home/chensen/*.apar','/home/sam/mysrvlist/apar')
+def lssecfix():
+	with settings(
+                hide('warnings','running','stdout','stderr'),
+                warn_only=True
+        ):
+		with cd('/home/chensen'):
+			run('lssecfixes -d /home/chensen -p|grep -v "N/A" >`uname -n`.apar')
+
+def deploy():
+        execute(updatedb)
+        execute(upload,'RedHat4AS',role='redhat4as')
+        execute(upload,'RedHat4ES',role='redhat4es')
+        execute(upload,'RedHat5Server',role='redhat5')
+        execute(upload,'RedHat6Server',role='redhat6')
+        execute(lssecfix,role='all')
+        execute(download,role='all')
+
+#############################version 0.1 ######################################
+[sam@oc1181188062 mysrvlist]$ cat test_apar.py
+#!/usr/bin/env python
+#coding=utf-8
+from fabric.api import *
+import string
+import sys
+import socket
+import paramiko
+
+r6 = []
+r5 = []
+r4as = []
+r4es = []
+
+for line in open('/home/sam/mysrvlist/os_aparserver','r').readlines():
+	(srv,os)=line.split("\t")
+	if os.strip('\n') == 'RedHat6Server':
+		r6.append(srv)
+	elif os.strip('\n') == 'RedHat5Server':
+		r5.append(srv)
+	elif os.strip('\n') == 'RedHat4ES':
+		r4es.append(srv)
+	elif os.strip('\n') == 'RedHat4AS':
+		r4as.append(srv)
+env.roledefs = {
+	'redhat4as': r4as,
+	'redhat4es': r4es,
+	'redhat5': r5,
+	'redhat6': r6,
+	'all': r4as+r4es+r5+r6,
+}
+def upload(myfile):
+	with settings(
+		hide('warnings','running','stdout','stderr'),
+		warn_only=True
+	):
+		put('/home/sam/mysrvlist/secfixdb.'+myfile,'/home/chensen')
+	
+def download():
+	with settings(
+                hide('warnings','running','stdout','stderr'),
+                warn_only=True
+        ):
+		get('/home/chensen/*.apar','/home/sam/mysrvlist/apar')
+def lssecfix():
+	with settings(
+                hide('warnings','running','stdout','stderr'),
+                warn_only=True
+        ):
+		with cd('/home/chensen'):
+			run('lssecfixes -d /home/chensen -p|grep -v "N/A" >`uname -n`.apar')
+
+##################################################################################
+[sam@oc1181188062 mysrvlist]$ cat check_apar.sh 
+#!/bin/bash
+rm -f apar/*
+rm -rf secfixdb.*
+
+wget -c --retr-symlinks http://lssec.hursley.ibm.com/secfixdb/secfixdb.RedHat4ES
+wget -c --retr-symlinks http://lssec.hursley.ibm.com/secfixdb/secfixdb.RedHat4AS
+wget -c --retr-symlinks http://lssec.hursley.ibm.com/secfixdb/secfixdb.RedHat5Server
+wget -c --retr-symlinks http://lssec.hursley.ibm.com/secfixdb/secfixdb.RedHat6Server
+
+chmod 775 secfixdb.*
+
+fab -f test_apar.py -R redhat5 upload:RedHat5Server -P -z 20
+fab -f test_apar.py -R redhat6 upload:RedHat6Server -P -z 20
+fab -f test_apar.py -R redhat4as upload:RedHat4AS -P -z 20
+fab -f test_apar.py -R redhat4es upload:RedHat4ES -P -z 20
+fab -f test_apar.py -R all lssecfix -P -z 20
+fab -f test_apar.py -R all download -P -z 20
+

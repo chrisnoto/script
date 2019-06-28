@@ -1,0 +1,24 @@
+  *-cdrom                 
+       description: SCSI CD-ROM
+       physical id: 0.0.0
+       bus info: scsi@1:0.0.0
+       logical name: /dev/cdrom
+       logical name: /dev/dvd
+       logical name: /dev/scd0
+       logical name: /dev/sr0
+       capabilities: audio
+       configuration: signature=3d3566b8 status=ready
+  *-disk:0
+       description: SCSI Disk
+       physical id: 0.0.0
+       bus info: scsi@2:0.0.0
+       logical name: /dev/sda
+       size: 8GiB (8589MB)
+       configuration: logicalsectorsize=512 sectorsize=512
+  *-disk:1
+       description: SCSI Disk
+       physical id: 0.0.1
+       bus info: scsi@2:0.0.1
+       logical name: /dev/sdb
+       size: 8GiB (8589MB)
+       configuration: logicalsectorsize=512 sectorsize=512

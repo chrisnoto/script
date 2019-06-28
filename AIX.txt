@@ -1,0 +1,123 @@
+ FIX AND INTERIM FIX INSTALLATION
+
+        IMPORTANT: If possible, it is recommended that a mksysb backup
+        of the system be created.  Verify it is both bootable and
+        readable before proceeding.
+
+        To preview a fix installation:
+
+        installp -a -d fix_name -p all  # where fix_name is the name of the
+                                        # fix package being previewed.
+        To install a fix package:
+
+        installp -a -d fix_name -X all  # where fix_name is the name of the  
+                                        # fix package being installed.
+
+        Interim fixes have had limited functional and regression
+        testing but not the full regression testing that takes place
+        for Service Packs; thus, IBM does not warrant the fully
+        correct functionality of an interim fix.
+
+        Interim fix management documentation can be found at:
+
+        http://www14.software.ibm.com/webapp/set2/sas/f/aix.efixmgmt/home.html
+
+        To preview an interim fix installation:
+
+        emgr -e ipkg_name -p         # where ipkg_name is the name of the  
+                                     # interim fix package being previewed.
+
+        To install an interim fix package:
+
+        emgr -e ipkg_name -X         # where ipkg_name is the name of the  
+                                     # interim fix package being installed.
+
+To extract the fixes from the tar file:
+
+    zcat openssl.0.9.8.1801.tar.Z | tar xvf -
+    or
+    zcat openssl-fips.12.9.8.1801.tar.Z | tar xvf -
+    or
+    zcat openssl.0.9.8.809.tar.Z | tar xvf -
+
+    IMPORTANT: If possible, it is recommended that a mksysb backup
+    of the system be created.  Verify it is both bootable and
+    readable before proceeding.
+
+    To preview the fix installation:
+
+    installp -apYd . openssl
+
+    To install the fix package:
+
+    installp -aXYd . openssl
+
+
+lqueryvg -Atp rootvg
+readvgda rootvg
+lsattr -El mem0 sys0 proc0 hdisk0 en0
+lspath
+lsdev -C -F'name:location:description'
+lsuser -f ALL
+lssrc -S
+lsps -a
+lsps -s
+
+cat /usr/local/bin/inq
+cat /usr/local/bin/inq -sid
+pcmpath query adapter
+pcmpath query device
+pcmpath query wwpn
+
+一、查看型号、序列号、CPU、内存、HMC
+型号：
+#uname -M
+IBM,8204-E8A
+序列号：
+#uname -u
+IBM,0206*****
+CPU数量
+#lsdev -Cc processor
+CPU主频
+#lsattr -El proc0
+查看CPU是否64位
+#prtconf -c
+内存信息：
+#lsattr -El mem0
+查看该机当前由哪台HMC管理
+#lsrsrc IBM.ManagementServer
+型号、序列号、内存统一信息：
+#lsattr -El sys0
+二、查看磁盘信息：
+#lspv
+#lspath
+列出所有磁盘设备
+#lsdev -Cc disk
+查看磁盘容量
+#bootinfo -s hdisk0
+查看磁盘属性
+#lsattr -El hdisk0
+查看磁盘物理插槽信息
+#lscfg -vpl hdisk0
+三、查看网卡信息
+#lsdev -Cc adapter|grep ent
+#lsattr -El ent4
+#lscfg -vpl ent2
+#lsattr -El en4
+查看网卡当前连接状态、链路速率
+#netstat -v en4 |grep -i Speed
+四、HBA卡信息
+#lsdev -Cc adapter|grep fcs
+fcs0     Available 01-08 FC Adapter
+fcs1     Available 01-09 FC Adapter
+fcs2     Available 04-08 FC Adapter
+fcs3     Available 04-09 FC Adapter
+#lsattr -El fcs0
+查看HBA卡的物理插槽、WWN：
+#lscfg -vpl fcs0
+五、磁带tape信息
+#lsdev -Cc tape
+rmt0 Available 02-08-00 SAS 4mm Tape Drive
+#lsattr -El rmt0
+#lscfg -vpl rmt0
+
